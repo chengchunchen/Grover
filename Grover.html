@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Grover Visualization Tool</title>
+	<meta charset="utf-8">
+    <link rel="stylesheet" href="type.css">
+</head>
+<body>
+    <div class="main">
+        <h2> Grover Visualization Tool</h2>
+        <div class = "left">
+            <div class = "half-div">
+                <h1>Input</h1>
+                <table class = "box" style="border: 3px #FFD382 solid;" cellpadding="10" border="1">
+                    <tr>
+                        <th>n值</th>
+                        <td><input type="text" name='integer' id='integer' placeholder="輸入n值"></td>
+                    </tr>
+                    <tr>
+                        <th>個數</th>
+                        <td><input type="text" name='see' id='see' placeholder="選到m個"></td>
+                    </tr>
+                    <tr>
+                        <th>次數</th>
+                        <td><input type="text" name='run' id='run' placeholder="做幾次"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><input type="button" value="read" onclick="read()"><input type="button" value="auto" onclick="click_auto()"><input type="button" value="show" onclick="click_hand()"></td>
+                    </tr>
+                </table>
+            </div>
+            <div class = "half-div">
+                <table class = "box" style="border: 3px #FFD382 solid;" cellpadding="10" border="1">
+                    <h1>Output</h1>
+                    <tr>
+                        <th>n值</th>
+                        <td name="n_value" id="n_value"></td>
+                    </tr>
+                    <tr>
+                        <th>次數</th>
+                        <td name="time_value" id="time_value"></td>
+                    </tr>
+                    <tr>
+                        <th>機率</th>
+                        <td name="pro_value" id="pro_value"></td>
+                    </tr>
+                    <tr>
+                        <th>角度</th>
+                        <td name="angle_value" id="angle_value"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class = "mid" id="my-div">
+            <h1><canvas id = "angle"></canvas></h1>
+            <!--<table class = "box" style="border: 3px #FFD382 solid;" cellpadding="10" border="1">
+                <tr>
+                    <th>控制器</th>
+                    <td>
+                        <button onclick="slow_down()"><img src="./icon/backward-solid.svg"  width="20" height="20" ></button>
+                        <button onclick="pause_process()" name="pause" id="pause"><img src="./icon/pause.svg"  width="20" height="20" ></button>
+                        <button onclick="speed_up()"><img src="./icon/forward-solid.svg"  width="20" height="20" ></button>
+                    </td>
+                    <td name="speed" id="speed"></td>
+                </tr>
+            </table>-->
+        </div>
+        <div class = "right">
+            <div class = "half-div">
+                <h3>做幾次會達到最大值</h3>
+                <table class = "box" style="border: 3px #FFD382 solid;" cellpadding="10" border="1">
+                    
+                    <tr>
+                        <th>n值</th>
+                        <th>個數</th>
+                        <th>次數</th>
+                        <th>機率</th>
+                    </tr>
+                    <tr onclick="suggest_use(1)">
+                        <th name="sug_n1" id="sug_n1"></th>
+                        <th name="sug_m1" id="sug_m1"></th>
+                        <th name="sug_r1" id="sug_r1"></th>
+                        <th name="sug_p1" id="sug_p1"></th>
+
+                    </tr>
+                </table>
+                <h3>固定取一個次數</h3>
+                <table class = "box" style="border: 3px #FFD382 solid;" cellpadding="10" border="1">
+                    
+                    <tr>
+                        <th>n值</th>
+                        <th>個數</th>
+                        <th>次數</th>
+                        <th>機率</th>
+                    </tr>
+                    <tr onclick="suggest_use(2)" >
+                        <th name="sug_n2" id="sug_n2"></th>
+                        <th name="sug_m2" id="sug_m2"></th>
+                        <th name="sug_r2" id="sug_r2"></th>
+                        <th name="sug_p2" id="sug_p2"></th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var n=0,m=0,r=0;
+        var radius = 0 , phase = 0,p = 0;
+        var angle_interval,init_angle = 0,angle=0 , s_angle =0;
+        //自適應canvas
+        canvas = document.getElementById('angle');
+        context = canvas.getContext('2d');
+        myDiv = document.getElementById("my-div");
+        initialize();
+        function initialize() {
+            window.addEventListener('resize', resizeCanvas, false);
+            resizeCanvas();
+        }
+        function resizeCanvas() {
+            canvas.width = myDiv.clientWidth;
+            canvas.height = myDiv.clientHeight;
+        }
+        //按下按鈕
+        function read(){
+            n=0,m=0,r=0;
+            radius = 0 , phase = 0,p = 0;
+            angle_interval,init_angle = 0;
+            angle=0;
+            var integerElement=document.getElementById("integer");
+            n=integerElement.value;
+            var Element=document.getElementById("see");
+            m=Element.value;
+            var Element=document.getElementById("run");
+            r=Element.value;            
+            document.getElementById("n_value").innerHTML = n;
+            //document.getElementById("speed").innerHTML=speed+"ms";
+            console.log("輸入值"+ n +" "+ m +" " + r);
+            context.clearRect(0,0,canvas.width,canvas.height);
+            suggest(n,m,r);
+            max_n(r);
+        }
+
+        function click_auto(){
+            draw(n,m,r);
+        }
+        function click_hand()
+        {
+            draw_hand(n,m,r);
+            phase=phase+1;
+        }
+
+        //無動畫畫圖
+        function circle(){
+            //console.log(canvas.width + " " + canvas.height);
+            if(canvas.width/2 < canvas.height/2)
+            {
+                radius = canvas.width / 2.5;
+            }
+            else
+            {
+                radius = canvas.height / 2.5;
+            }
+            context.beginPath();
+            context.setLineDash([0,0]);
+            context.strokeStyle = "black";
+            context.lineWidth = 3;
+            context.arc(canvas.width/2, canvas.height/2, radius, 0, 2 * Math.PI);
+            context.stroke();
+            context.closePath();
+
+            //middle_line();
+        }
+        function sector(angle,color,border){
+            //console.log(angle);
+            context.beginPath();
+            context.setLineDash([0,0]);
+            context.lineWidth = 3;
+            context.arc(canvas.width/2, canvas.height/2, radius, 0, 2 * Math.PI - angle,  true);
+            context.lineTo(canvas.width/2, canvas.height/2);
+            context.lineTo(canvas.width/2+radius,canvas.height/2);
+            if(2 * Math.PI - angle == 2 * Math.PI )
+            {
+                context.fillStyle = "white";
+            }
+            else 
+            {
+                context.fillStyle = color;
+                context.strokeStyle = border;
+            }
+            
+            context.stroke();
+            context.fill();
+
+            context.closePath();
+        }
+        function reverse_line(y){
+            context.beginPath();
+            context.setLineDash([20,20]);
+            context.strokeStyle = "red";
+            context.lineWidth = 3;
+            context.moveTo(0,canvas.height/2);
+            context.lineTo(y,canvas.height/2);
+            context.stroke();
+            context.closePath();
+        }
+        function r_sector(angle,color,border){
+            //console.log(angle);
+            context.beginPath();
+            context.setLineDash([0,0]);
+            context.arc(canvas.width/2, canvas.height/2, radius, 0, angle, false);
+            context.lineTo(canvas.width/2, canvas.height/2);
+            context.lineTo(canvas.width/2+radius,canvas.height/2);
+            if(angle == 0)
+            {
+                context.fillStyle = "white";
+            }
+            else 
+            {
+                context.fillStyle = color;
+                context.strokeStyle = border;
+            }
+            context.lineWidth = 2;
+            context.fill();
+            context.stroke();
+
+            context.closePath();
+        }
+        function fold_line(angle,percent){
+            context.beginPath();
+            context.setLineDash([20,20]);
+            context.strokeStyle = "black";
+            context.lineWidth = 3;
+            context.moveTo(canvas.width/2,canvas.height/2);
+            context.lineTo(canvas.width/2 + canvas.width/2*percent ,canvas.height/2-(canvas.width/2)*Math.tan(init_angle) * percent);
+            context.stroke();
+            context.closePath();
+        }
+        function flip_sector(angle,color,border){
+            console.log (init_angle)
+            context.beginPath();
+            context.setLineDash([0,0]);
+            context.lineWidth = 3;
+            //context.lineTo(canvas.width/2, canvas.height/2);
+            context.arc(canvas.width/2, canvas.height/2, radius, 2*Math.PI - s_angle, 2*Math.PI - init_angle - angle,  false);
+            //context.lineTo(canvas.width/2 +radius*Math.cos(s_angle),canvas.height/2+radius*Math.sin(s_angle));
+            context.lineTo(canvas.width/2, canvas.height/2);
+            
+            context.fillStyle = color;
+            context.strokeStyle = border;
+            
+            
+            context.stroke();
+            context.fill();
+            context.closePath();
+        }
+        //畫圖動畫
+        function task1(angle){
+            return new Promise(resolve => {
+                var animation = 1;
+                angle_interval = setInterval(function(){
+                    sector(angle,"#F7EED3","#FF9932");
+                    circle();
+                    fold_line(angle,1);
+                    document.getElementById("angle_value").innerHTML = (angle/Math.PI).toFixed(8)+"π";
+                    document.getElementById("pro_value").innerHTML = Math.pow(Math.sin(angle),2).toFixed(8)*100+"%";
+                    animation++;
+                    if(animation == 51)
+                    {
+                        clearInterval(angle_interval);
+                        resolve(); 
+                    }
+                },20);
+            });
+        }
+        function task2(angle){
+            return new Promise(resolve => {
+                var animation = 1;
+                angle_interval = setInterval(function(){
+                    //sector(angle);
+                    //circle();
+                    reverse_line(canvas.width * animation / 50);
+                    //console.log ("2 " + animation);
+                    animation++;
+                    if(animation == 51)
+                    {
+                        clearInterval(angle_interval);
+                        resolve(); 
+                    }
+                },20);  
+            });          
+        }
+        function task3(angle){
+            context.clearRect(0,0,canvas.width,canvas.height);
+            circle();
+            reverse_line(canvas.width);
+            return new Promise(resolve => {
+                var animation = 25;
+                angle_interval = setInterval(function(){
+                    if(animation>=0 && animation <= 25)
+                    {
+                        context.clearRect(0,0,canvas.width,canvas.height);
+                        sector(angle,"#F9EFD1","#FF9932");
+                        sector(angle * animation / 25,"#FFF5C6","#FFCE16");
+                        circle();
+                        reverse_line(canvas.width);
+                    }
+                    else if (animation<0)
+                    {
+                        sector(angle,"#F9EFD1","#FF9932");
+                        r_sector(angle*(-animation)/25,"#FFF5C6","#FFCE16");
+                        reverse_line(canvas.width);
+                        circle();
+                    }
+                animation--;
+                if(animation==-26)
+                {
+                    document.getElementById("angle_value").innerHTML = (angle/Math.PI).toFixed(8)+"π";
+                    document.getElementById("pro_value").innerHTML = Math.pow(Math.sin(angle),2).toFixed(8)*100+"%";
+                    clearInterval(angle_interval);
+                    resolve(); 
+                } 
+                },20);
+            });
+        }
+        function task4(angle){
+            context.clearRect(0,0,canvas.width,canvas.height);
+            sector(angle,"#FFF5C6","#FFCE16");
+            r_sector(angle,"#FFF5C6","#FFCE16");
+            circle();
+            var animation = 1;
+            return new Promise(resolve => {
+                angle_interval = setInterval(function(){
+                    fold_line(angle,animation/50);
+                    animation++;
+                    if(animation==51)
+                    {
+                        clearInterval(angle_interval);
+                        resolve(); 
+                    }
+                },20);
+            });
+        }
+        function task5(angle){
+            var animation = 25;
+            return new Promise(resolve => {
+                angle_interval = setInterval(function(){
+                    console.log(animation)
+                    if(animation>=0 && animation <= 25)
+                    {
+                        r_sector(angle,"#FFF5C6","#FFCE16");
+                        sector(init_angle,"#FFB57D","#FFB57D");
+                        r_sector(angle*animation/25,"#FFB57D","#FFB57D");
+                    }
+                    else if (animation>=-25&& animation<0)
+                    {
+                        sector(init_angle * (-animation / 25),"#F9EFD1","#FF9932");
+                    }
+                    else if (animation>=-50&& animation<-25)
+                    {
+                        s_angle = angle + 2 * init_angle;
+                        flip_sector((s_angle - init_angle) * (-(animation + 25))/ 25,"#FFB57D","#FFB57D");
+                        sector(init_angle + (s_angle - init_angle) * (-(animation + 25))/ 25,"#FFF5C6","#FFCE16");
+                    }
+                    circle();
+                    fold_line(angle,1);
+                    animation--;
+                    if(animation==-51)
+                    {
+                        clearInterval(angle_interval);
+                        resolve(); 
+                    }
+                },20);
+            });
+        }
+        async function all_task(angle, run_time){
+            for(var i=0;i<run_time;i++)
+            {
+                document.getElementById("time_value").innerHTML = (i+1) +"/"+r;;
+                //console.log(init_angle);
+                await task1(angle);     //initialization
+                await task2(angle);     //mean line
+                await task3(angle);     //reverse
+                await task4(angle);     //fold line
+                await task5(angle);     //up  
+                angle = angle + 2 * init_angle;
+                document.getElementById("angle_value").innerHTML = (angle/Math.PI).toFixed(8)+"π";
+                document.getElementById("pro_value").innerHTML = Math.pow(Math.sin(angle),2).toFixed(8)*100+"%";
+            }
+        }
+        async function all_task_hand(){
+            console.log(angle);
+            document.getElementById("time_value").innerHTML = (p+1) +"/"+r;;
+            if(phase==0)
+            {
+                await task1(angle);     //initialization
+                await task2(angle);     //mean line
+                await task3(angle);     //reverse
+            }
+            else if (phase == 1)
+            {
+                await task4(angle);     //fold line
+                await task5(angle);     //up 
+                phase=0;p=p+1;
+                angle = angle + 2 * init_angle;
+            }
+            document.getElementById("angle_value").innerHTML = (angle/Math.PI).toFixed(8)+"π";
+            document.getElementById("pro_value").innerHTML = Math.pow(Math.sin(angle),2).toFixed(8)*100+"%";
+        }
+
+        function draw(num,choose,run){
+            angle = Math.asin(Math.sqrt(choose/num));
+            init_angle = angle;
+            all_task(angle , run);
+        }
+        function draw_hand(num,choose,run){
+            if(p<run)
+            {
+                if(p==0)
+                {
+                    angle = Math.asin(Math.sqrt(choose/num));
+                    init_angle = angle;
+                }
+                all_task_hand();
+            }
+            else
+            {
+                p=0;phase=0;
+            }
+        }
+        //建議值
+        function suggest(num,choose,run){
+            //在n跟m固定的情況下，做幾次會達到最高機率
+            var high_time=0, now_angle=0,maxp=0;
+            first_angle = Math.asin(Math.sqrt(choose/num));
+            now_angle = first_angle;
+            maxp = Math.pow(Math.sin(now_angle),2);
+            while(1)
+            {
+                now_angle=now_angle + 2 * first_angle;
+                probability = Math.pow(Math.sin(now_angle),2);
+                if(probability>maxp)
+                {
+                    maxp=probability;
+                    high_time++;
+                }
+                else
+                {
+                    document.getElementById("sug_n1").innerHTML = num;
+                    document.getElementById("sug_m1").innerHTML = choose;
+                    document.getElementById("sug_r1").innerHTML = high_time;
+                    document.getElementById("sug_p1").innerHTML = maxp.toFixed(5)*100+"%";
+                    high_time=0;
+                    break;
+                }
+            }
+        }
+        function max_n(run_time){
+            var cal=0,f=0,c=0,f_angle=0,c_angle=0,f_result=0,c_result=0;
+            cal =  Math.pow(1/(Math.sin(Math.PI/(2*(1+2*run_time)))),2);
+            //比較上下界
+            f=Math.floor(cal);
+            c=Math.ceil(cal);
+            f_angle=Math.asin(Math.sqrt(1/f));
+            c_angle=Math.asin(Math.sqrt(1/c));
+            f_angle=f_angle+2*run_time*f_angle;
+            c_angle=c_angle+2*run_time*c_angle;
+            f_result=Math.pow(Math.sin(f_angle),2);
+            c_result=Math.pow(Math.sin(c_angle),2);
+            if(f_result>c_result)
+            {
+                document.getElementById("sug_n2").innerHTML = f;
+                document.getElementById("sug_m2").innerHTML = 1;
+                document.getElementById("sug_r2").innerHTML = run_time;
+                document.getElementById("sug_p2").innerHTML = f_result.toFixed(5)*100+"%";
+            }
+            else
+            {
+                document.getElementById("sug_n2").innerHTML = c;
+                document.getElementById("sug_m2").innerHTML = 1;
+                document.getElementById("sug_r2").innerHTML = run_time;
+                document.getElementById("sug_p2").innerHTML = c_result.toFixed(5)*100+"%";
+            }
+        }
+    </script>
+</body>
+</html>
